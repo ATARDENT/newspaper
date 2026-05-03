@@ -1,0 +1,427 @@
+---
+import { DEADLINES } from '../data/submission-deadlines';
+---
+
+<section class="lobby" aria-labelledby="lobby-heading">
+	<header class="lobby__mast">
+		<div class="lobby__rule lobby__rule--top" aria-hidden="true" />
+		<h2 id="lobby-heading" class="lobby__title">Submission lobby</h2>
+		<p class="lobby__sub">
+			Hotel clocks in local halls, and days left to each abstract or full deadline. Dates are placeholders — swap
+			them for official CFP instants in <code>src/data/submission-deadlines.ts</code>.
+		</p>
+		<div class="lobby__rule" aria-hidden="true" />
+	</header>
+
+	<div class="lobby__grid">
+		{
+			DEADLINES.map((d) => (
+				<article
+					class:list={[
+						'lobby-card',
+						d.kind === 'outside_window' && 'lobby-card--outside',
+						d.kind === 'rolling' && 'lobby-card--rolling',
+					]}
+					data-deadline-id={d.id}
+					data-kind={d.kind}
+					data-tz={d.clockTimezone}
+					data-deadline={d.deadlineIso ?? ''}
+				>
+					<div class="lobby-card__plaque">
+						<h3 class="lobby-card__name">{d.name}</h3>
+						<p class="lobby-card__loc">{d.locationLine}</p>
+					</div>
+
+					<div class="lobby-card__clockRow">
+						<div class="lobby-clock">
+							<span class="lobby-clock__label">Local time</span>
+							<time class="lobby-clock__face" data-slot="local-time" datetime="">
+								—:—:—
+							</time>
+							<span class="lobby-clock__tz" data-slot="tz-abbr" />
+						</div>
+					</div>
+
+					<div class="lobby-card__countBlock">
+						<p class="lobby-count__label">To submission bell</p>
+						<div class="lobby-count" data-slot="countdown-wrap">
+							<div class="lobby-count__cell">
+								<span class="lobby-count__num" data-slot="d">00</span>
+								<span class="lobby-count__unit">days</span>
+							</div>
+							<div class="lobby-count__cell">
+								<span class="lobby-count__num" data-slot="h">00</span>
+								<span class="lobby-count__unit">hrs</span>
+							</div>
+							<div class="lobby-count__cell">
+								<span class="lobby-count__num" data-slot="m">00</span>
+								<span class="lobby-count__unit">min</span>
+							</div>
+							<div class="lobby-count__cell">
+								<span class="lobby-count__num" data-slot="s">00</span>
+								<span class="lobby-count__unit">sec</span>
+							</div>
+						</div>
+						<p class="lobby-card__foot" data-slot="status">
+							{d.subtitle}
+						</p>
+					</div>
+				</article>
+			))
+		}
+	</div>
+</section>
+
+<script>
+	function partsDiff(targetMs: number, nowMs: number) {
+		const delta = targetMs - nowMs;
+		if (delta <= 0) return { past: true as const, d: 0, h: 0, m: 0, s: 0 };
+		const sTotal = Math.floor(delta / 1000);
+		const d = Math.floor(sTotal / 86400);
+		const h = Math.floor((sTotal % 86400) / 3600);
+		const m = Math.floor((sTotal % 3600) / 60);
+		const s = sTotal % 60;
+		return { past: false as const, d, h, m, s };
+	}
+
+	function pad2(n: number) {
+		return String(n).padStart(2, '0');
+	}
+
+	function fmtLocalTime(now: Date, timeZone: string) {
+		return new Intl.DateTimeFormat(undefined, {
+			timeZone,
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false,
+		}).format(now);
+	}
+
+	function tzAbbrev(now: Date, timeZone: string) {
+		const p =
+			new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' }).formatToParts(now);
+		return p.find((x) => x.type === 'timeZoneName')?.value ?? timeZone;
+	}
+
+	function bindCard(root: HTMLElement) {
+		const kind = root.dataset.kind!;
+		const tz = root.dataset.tz!;
+		const deadlineIso = root.dataset.deadline;
+		const $time = root.querySelector('[data-slot="local-time"]');
+		const $abbr = root.querySelector('[data-slot="tz-abbr"]');
+		const $d = root.querySelector('[data-slot="d"]');
+		const $h = root.querySelector('[data-slot="h"]');
+		const $m = root.querySelector('[data-slot="m"]');
+		const $s = root.querySelector('[data-slot="s"]');
+		const $wrap = root.querySelector('[data-slot="countdown-wrap"]');
+		const $label = root.querySelector('.lobby-count__label');
+
+		function tick(now: Date) {
+			if ($time && $time instanceof HTMLTimeElement) {
+				$time.textContent = fmtLocalTime(now, tz).replace(',', '');
+				$time.dateTime = now.toISOString();
+			}
+			if ($abbr) $abbr.textContent = tzAbbrev(now, tz);
+
+			if (kind === 'rolling') {
+				if ($d) $d.textContent = '—';
+				if ($h) $h.textContent = '—';
+				if ($m) $m.textContent = '—';
+				if ($s) $s.textContent = '—';
+				if ($label) $label.textContent = 'No fixed bell';
+				if ($wrap) $wrap.classList.add('lobby-count--muted');
+				return;
+			}
+
+			if (kind === 'outside_window') {
+				if ($d) $d.textContent = '—';
+				if ($h) $h.textContent = '—';
+				if ($m) $m.textContent = '—';
+				if ($s) $s.textContent = '—';
+				if ($label) $label.textContent = 'Countdown withdrawn';
+				if ($wrap) $wrap.classList.add('lobby-count--outside');
+				return;
+			}
+
+			if (!deadlineIso || kind !== 'countdown') return;
+
+			const target = new Date(deadlineIso).getTime();
+			const nowMs = now.getTime();
+			const parts = partsDiff(target, nowMs);
+
+			if (parts.past) {
+				if ($d) $d.textContent = '00';
+				if ($h) $h.textContent = '00';
+				if ($m) $m.textContent = '00';
+				if ($s) $s.textContent = '00';
+				if ($label) $label.textContent = 'Bell has rung';
+				if ($wrap) $wrap.classList.add('lobby-count--elapsed');
+			} else {
+				if ($wrap) $wrap.classList.remove('lobby-count--elapsed');
+				if ($d) $d.textContent = pad2(parts.d);
+				if ($h) $h.textContent = pad2(parts.h);
+				if ($m) $m.textContent = pad2(parts.m);
+				if ($s) $s.textContent = pad2(parts.s);
+				if ($label) $label.textContent = 'To submission bell';
+			}
+		}
+
+		return tick;
+	}
+
+	const cards = document.querySelectorAll<HTMLElement>('[data-deadline-id]');
+	const fns = [...cards].map(bindCard);
+
+	function loop() {
+		const now = new Date();
+		for (const fn of fns) fn(now);
+	}
+
+	loop();
+	setInterval(loop, 1000);
+</script>
+
+<style>
+	.lobby {
+		margin-top: 2.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.lobby__mast {
+		text-align: center;
+		margin-bottom: 1.25rem;
+	}
+
+	.lobby__title {
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		margin: 0 0 0.5rem;
+	}
+
+	.lobby__sub {
+		font-size: 0.8rem;
+		color: var(--muted);
+		max-width: 40rem;
+		margin: 0 auto 1rem;
+		line-height: 1.45;
+	}
+
+	.lobby__sub code {
+		font-size: 0.88em;
+		background: rgba(20, 18, 15, 0.07);
+		padding: 0.08em 0.3em;
+	}
+
+	.lobby__rule {
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent 0,
+			var(--rule) 12%,
+			var(--ink) 50%,
+			var(--rule) 88%,
+			transparent 100%
+		);
+		opacity: 0.85;
+	}
+
+	.lobby__rule--top {
+		height: 3px;
+		background: repeating-linear-gradient(
+			90deg,
+			var(--ink) 0,
+			var(--ink) 2px,
+			transparent 2px,
+			transparent 5px
+		);
+		margin-bottom: 0.85rem;
+		opacity: 1;
+	}
+
+	.lobby__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: 1rem 1rem;
+	}
+
+	.lobby-card {
+		position: relative;
+		border: 3px double var(--ink);
+		background: linear-gradient(165deg, #fffcf7 0%, #f3efe6 42%, #e8e2d7 100%);
+		padding: 0.85rem 0.95rem 0.75rem;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.65),
+			2px 3px 0 rgba(25, 20, 15, 0.12);
+	}
+
+	.lobby-card::before {
+		content: '';
+		position: absolute;
+		inset: 5px;
+		border: 1px solid rgba(60, 50, 40, 0.2);
+		pointer-events: none;
+	}
+
+	.lobby-card--outside {
+		opacity: 0.72;
+		filter: grayscale(0.25);
+	}
+
+	.lobby-card--rolling .lobby-count__num {
+		font-weight: 500;
+		letter-spacing: 0.2em;
+	}
+
+	.lobby-card__plaque {
+		text-align: center;
+		position: relative;
+		z-index: 1;
+		border-bottom: 2px solid var(--ink);
+		padding-bottom: 0.55rem;
+		margin-bottom: 0.65rem;
+	}
+
+	.lobby-card__name {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		font-weight: 700;
+		margin: 0 0 0.15rem;
+		letter-spacing: 0.02em;
+	}
+
+	.lobby-card__loc {
+		font-size: 0.65rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		margin: 0;
+		color: var(--muted);
+	}
+
+	.lobby-card__clockRow {
+		display: flex;
+		justify-content: center;
+		margin-bottom: 0.65rem;
+		position: relative;
+		z-index: 1;
+	}
+
+	.lobby-clock {
+		text-align: center;
+		background: radial-gradient(ellipse at center, #1a1714 0%, #0e0d0b 100%);
+		color: #e8dfd0;
+		border-radius: 4px;
+		padding: 0.45rem 0.85rem 0.35rem;
+		min-width: 11.5rem;
+		border: 2px solid #3d3429;
+		box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+	}
+
+	.lobby-clock__label {
+		display: block;
+		font-size: 0.55rem;
+		text-transform: uppercase;
+		letter-spacing: 0.22em;
+		color: rgba(232, 223, 208, 0.55);
+		margin-bottom: 0.15rem;
+	}
+
+	.lobby-clock__face {
+		font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+		font-size: 1rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+	}
+
+	.lobby-clock__tz {
+		display: block;
+		font-size: 0.58rem;
+		margin-top: 0.1rem;
+		color: rgba(232, 223, 208, 0.45);
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+	}
+
+	.lobby-count__label {
+		font-size: 0.6rem;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		text-align: center;
+		margin: 0 0 0.35rem;
+		color: var(--muted);
+	}
+
+	.lobby-count {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.25rem;
+		position: relative;
+		z-index: 1;
+	}
+
+	.lobby-count__cell {
+		text-align: center;
+		border: 1px solid var(--ink);
+		background: repeating-linear-gradient(
+			-12deg,
+			var(--paper-raised),
+			var(--paper-raised) 2px,
+			rgba(20, 18, 15, 0.04) 2px,
+			rgba(20, 18, 15, 0.04) 4px
+		);
+		padding: 0.35rem 0.15rem 0.28rem;
+	}
+
+	.lobby-count__num {
+		display: block;
+		font-family: ui-monospace, 'Cascadia Code', monospace;
+		font-size: 1.05rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.lobby-count__unit {
+		display: block;
+		font-size: 0.52rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--muted);
+		margin-top: 0.2rem;
+	}
+
+	.lobby-count--muted .lobby-count__cell {
+		border-style: dashed;
+		opacity: 0.75;
+	}
+
+	.lobby-count--outside .lobby-count__cell {
+		border-style: dotted;
+	}
+
+	.lobby-count--elapsed .lobby-count__num {
+		color: var(--accent);
+	}
+
+	.lobby-card__foot {
+		font-size: 0.65rem;
+		color: var(--muted);
+		font-style: italic;
+		text-align: center;
+		margin: 0.5rem 0 0;
+		line-height: 1.35;
+	}
+
+	@media (max-width: 520px) {
+		.lobby-count__num {
+			font-size: 0.92rem;
+		}
+	}
+</style>

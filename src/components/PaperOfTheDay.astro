@@ -1,0 +1,233 @@
+---
+---
+
+<section class="pod" aria-labelledby="pod-heading">
+	<div class="pod__rule" />
+	<header class="pod__head">
+		<h2 id="pod-heading">Paper of the day</h2>
+		<p class="pod__credit">
+			Drawn daily from{' '}
+			<a href="https://github.com/itsual/Notable-LLM-Research-Papers" target="_blank" rel="noopener noreferrer">
+				itsual / Notable-LLM-Research-Papers
+			</a>
+		</p>
+	</header>
+	<div class="pod__body" aria-live="polite">
+		<p class="pod__status pod__loading" data-pod-loading>Fetching today&apos;s highlighted paper...</p>
+		<div class="pod__featured is-hidden" data-pod-feature>
+			<p class="pod__dek" data-pod-date />
+			<h3 class="pod__title" data-pod-title />
+			<p class="pod__acts">
+				<a class="pod__cta" href="#" target="_blank" rel="noopener noreferrer" data-pod-link>Open paper</a>
+				<button type="button" class="pod__shuffle" data-pod-shuffle title="Pick another paper from the list">
+					Show another
+				</button>
+			</p>
+		</div>
+		<p class="pod__status pod__err is-hidden" data-pod-error />
+	</div>
+</section>
+
+<script>
+	import {
+		NOTABLE_LLM_README_URL,
+		parseNotableLlmsPaperTable,
+		pickPaperOfTheDay,
+	} from '../lib/papers';
+
+	const $load = document.querySelector('[data-pod-loading]');
+	const $err = document.querySelector('[data-pod-error]');
+	const $feat = document.querySelector('[data-pod-feature]');
+	const $date = document.querySelector('[data-pod-date]');
+	const $title = document.querySelector('[data-pod-title]');
+	const $link = document.querySelector('[data-pod-link]') as HTMLAnchorElement | null;
+	const $shuffle = document.querySelector('[data-pod-shuffle]') as HTMLButtonElement | null;
+
+	let papers: ReturnType<typeof parseNotableLlmsPaperTable> = [];
+	let current: { title: string; url: string } | null = null;
+
+	function showLoading() {
+		$load?.classList.remove('is-hidden');
+		$err?.classList.add('is-hidden');
+		$feat?.classList.add('is-hidden');
+	}
+
+	function showError(msg: string) {
+		$load?.classList.add('is-hidden');
+		$feat?.classList.add('is-hidden');
+		if ($err) {
+			$err.textContent = msg;
+			$err.classList.remove('is-hidden');
+		}
+	}
+
+	function renderPaper(p: { title: string; url: string }, label: string) {
+		current = p;
+		$load?.classList.add('is-hidden');
+		$err?.classList.add('is-hidden');
+		$feat?.classList.remove('is-hidden');
+		if ($date) $date.textContent = label;
+		if ($title) $title.textContent = p.title;
+		if ($link) {
+			$link.href = p.url;
+			$link.setAttribute('aria-label', `Open: ${p.title}`);
+		}
+	}
+
+	async function refreshList() {
+		showLoading();
+		try {
+			const res = await fetch(NOTABLE_LLM_README_URL, { cache: 'no-store' });
+			if (!res.ok) throw new Error(`Could not load list (${res.status})`);
+			const text = await res.text();
+			papers = parseNotableLlmsPaperTable(text);
+			if (papers.length === 0)
+				throw new Error('The paper list format may have changed; check the source repository.');
+
+			const today = new Date().toLocaleDateString(undefined, {
+				weekday: 'long',
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+			});
+			renderPaper(pickPaperOfTheDay(papers), `Today — ${today}`);
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : 'Something went wrong.';
+			showError(msg);
+		}
+	}
+
+	function randomOther() {
+		if (papers.length < 2) return;
+		let next = papers[Math.floor(Math.random() * papers.length)]!;
+		if (current && papers.length > 1) {
+			let guard = 0;
+			while (next!.url === current.url && guard++ < 12)
+				next = papers[Math.floor(Math.random() * papers.length)]!;
+		}
+		const subtitle = `From ${papers.length}+ papers in the community list`;
+		renderPaper(next!, subtitle);
+	}
+
+	$shuffle?.addEventListener('click', randomOther);
+	void refreshList();
+</script>
+
+<style>
+	.pod {
+		margin-top: 2rem;
+		border: 3px double var(--ink);
+		background: var(--paper-raised);
+		padding: 0 1.25rem 1.25rem;
+	}
+
+	.pod__rule {
+		height: 4px;
+		background: repeating-linear-gradient(
+			90deg,
+			var(--ink) 0,
+			var(--ink) 4px,
+			transparent 4px,
+			transparent 8px
+		);
+		margin: 0 -1.25rem 1rem;
+	}
+
+	.pod__head h2 {
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+		font-weight: 700;
+		margin: 0 0 0.35rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	.pod__credit {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--muted);
+	}
+
+	.pod__credit a {
+		color: var(--accent);
+		font-weight: 600;
+	}
+
+	.pod__body {
+		margin-top: 1rem;
+	}
+
+	.pod__status {
+		margin: 0;
+		font-style: italic;
+		color: var(--muted);
+	}
+
+	.pod__featured {
+		padding-top: 0.25rem;
+	}
+
+	.pod__dek {
+		font-size: 0.72rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--muted);
+		margin: 0 0 0.35rem;
+	}
+
+	.pod__title {
+		font-family: var(--font-display);
+		font-size: clamp(1.15rem, 2vw, 1.45rem);
+		font-weight: 600;
+		line-height: 1.25;
+		margin: 0 0 1rem;
+	}
+
+	.pod__acts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1rem;
+		align-items: center;
+		margin: 0;
+	}
+
+	.pod__cta {
+		display: inline-block;
+		padding: 0.45rem 1rem;
+		border: 2px solid var(--ink);
+		background: var(--ink);
+		color: var(--paper);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 0.8rem;
+		text-decoration: none;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+
+	.pod__cta:hover {
+		background: var(--accent-hover);
+		border-color: var(--accent-hover);
+	}
+
+	.pod__shuffle {
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		padding: 0.4rem 0;
+		border: none;
+		background: none;
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		cursor: pointer;
+		font-weight: 600;
+	}
+
+	.pod__shuffle:hover {
+		color: var(--accent-hover);
+	}
+
+	.is-hidden {
+		display: none !important;
+	}
+</style>

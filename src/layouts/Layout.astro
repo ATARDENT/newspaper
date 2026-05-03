@@ -1,23 +1,85 @@
+---
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'Ardent · Research Gazette',
+	description = 'Ardent — research hub: publications, tools, information, and workspace.',
+} = Astro.props;
+---
+
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta name="description" content={description} />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Libre+Franklin:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
 	<body>
 		<slot />
 	</body>
 </html>
 
-<style>
-	html,
+<style is:global>
+	:root {
+		--paper: #f4f0e6;
+		--paper-raised: #faf8f2;
+		--ink: #14120f;
+		--muted: #5c564c;
+		--rule: #c9c2b4;
+		--accent: #6b2d1a;
+		--accent-hover: #4a1f12;
+		--font-display: 'Newsreader', 'Times New Roman', Times, serif;
+		--font-sans: 'Libre Franklin', system-ui, sans-serif;
+	}
+
+	html {
+		box-sizing: border-box;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	*,
+	*::before,
+	*::after {
+		box-sizing: inherit;
+	}
+
 	body {
 		margin: 0;
-		width: 100%;
-		height: 100%;
+		min-height: 100vh;
+		background: var(--paper);
+		background-image:
+			repeating-linear-gradient(
+				0deg,
+				transparent,
+				transparent 24px,
+				rgba(20, 18, 15, 0.04) 24px,
+				rgba(20, 18, 15, 0.04) 25px
+			),
+			linear-gradient(180deg, #ebe6db 0%, var(--paper) 32%, var(--paper) 100%);
+		color: var(--ink);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		line-height: 1.55;
+	}
+
+	a {
+		color: var(--accent);
+	}
+
+	a:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
 	}
 </style>

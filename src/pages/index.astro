@@ -1,11 +1,395 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import PaperOfTheDay from '../components/PaperOfTheDay.astro';
+import SubmissionLobby from '../components/SubmissionLobby.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+/** Lead story — set `imageSrc` to a file in `public/` (e.g. `/images/lab.jpg`). */
+const headline = {
+	title: 'Ardent: research at the pace of today’s language models',
+	description:
+		'We study how large models reason, align, and serve people — and we share papers, code, and tools as we go. This front page is your dispatch desk: deadlines, reading, and lab links in one place.',
+	imageSrc: '/images/ardent-headline.svg',
+	imageAlt: 'Ardent project — replace this placeholder with your photograph or figure.',
+	caption: 'Lead illustration — swap in a photo or figure under public/images/',
+};
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Ardent · Research Gazette" description="Ardent research — publications, tools, information, and workspace.">
+	<div class="sheet">
+		<header class="masthead">
+			<p class="masthead__edition">
+				<span class="masthead__label">Edition</span>
+				<time id="edition-date"></time>
+			</p>
+			<h1 class="masthead__title">The Ardent</h1>
+			<p class="masthead__tagline">Research &amp; Ideas</p>
+			<p class="masthead__dek">
+				A newspaper-style home for your project: where papers, tooling, notes, and lab space meet.
+			</p>
+			<hr class="rule rule--thick" />
+		</header>
+
+		<section class="headline" aria-labelledby="headline-title">
+			<figure class="headline__figure">
+				<div class="headline__frame">
+					<img
+						class="headline__img"
+						src={headline.imageSrc}
+						alt={headline.imageAlt}
+						width="800"
+						height="520"
+						loading="eager"
+						fetchpriority="high"
+					/>
+				</div>
+				<figcaption class="headline__caption">{headline.caption}</figcaption>
+			</figure>
+			<div class="headline__text">
+				<p class="headline__kicker">Front page</p>
+				<h2 id="headline-title" class="headline__title">{headline.title}</h2>
+				<p class="headline__description">{headline.description}</p>
+			</div>
+		</section>
+
+		<hr class="rule headline__rule" />
+
+		<section class="columns" aria-label="Featured sections">
+			<article class="card card--accent">
+				<h2 class="card__heading">Publications</h2>
+				<p class="card__lede">
+					Preprints, conference papers, and technical reports.<br />Link your PDFs or arXiv pages here.
+				</p>
+				<ul class="card__bullets">
+					<li>Drafts &amp; camera-ready PDFs</li>
+					<li>BibTeX and citation snippets</li>
+				</ul>
+				<a class="card__link" href="#publications">Browse publications →</a>
+			</article>
+
+			<article class="card">
+				<h2 class="card__heading">Tools</h2>
+				<p class="card__lede">
+					Demos, code releases, notebooks, and scripts that accompany your research.
+				</p>
+				<ul class="card__bullets">
+					<li>Repos &amp; interactive demos</li>
+					<li>Models &amp; datasets</li>
+				</ul>
+				<a class="card__link" href="#tools">Open tools →</a>
+			</article>
+
+			<article class="card">
+				<h2 class="card__heading">Info</h2>
+				<p class="card__lede">
+					Vision, team, funding acknowledgments, and how to cite or collaborate.
+				</p>
+				<ul class="card__bullets">
+					<li>About &amp; contact</li>
+					<li>Policies &amp; licensing</li>
+				</ul>
+				<a class="card__link" href="#info">Read more →</a>
+			</article>
+
+			<article class="card">
+				<h2 class="card__heading">Working space</h2>
+				<p class="card__lede">
+					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
+				</p>
+				<ul class="card__bullets">
+					<li>Wikis / Notion / Drive links</li>
+					<li>Slack &amp; mail lists</li>
+				</ul>
+				<a class="card__link" href="#workspace">Enter workspace →</a>
+			</article>
+
+			<article class="card">
+				<h2 class="card__heading">Resources</h2>
+				<p class="card__lede">
+					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
+				</p>
+				<ul class="card__bullets">
+					<li>Wikis / Notion / Drive links</li>
+					<li>Slack &amp; mail lists</li>
+				</ul>
+				<a class="card__link" href="#workspace">Enter workspace →</a>
+			</article>
+
+			<article class="card">
+				<h2 class="card__heading">Notes</h2>
+				<p class="card__lede">
+					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
+				</p>
+				<ul class="card__bullets">
+					<li>Wikis / Notion / Drive links</li>
+					<li>Slack &amp; mail lists</li>
+				</ul>
+				<a class="card__link" href="#workspace">Enter workspace →</a>
+			</article>
+		</section>
+
+		<SubmissionLobby />
+
+		<PaperOfTheDay />
+
+		<hr class="rule" />
+		<footer class="foot">
+			<p>
+				<strong>Ardent</strong> — customize the anchors above (<code>#publications</code>, <code>#tools</code>,
+				etc.) or replace links in <code>src/pages/index.astro</code>.
+			</p>
+			<p class="foot__small">
+				“Paper of the day” aggregates titles from{' '}
+				<a href="https://github.com/itsual/Notable-LLM-Research-Papers">Notable LLM Research Papers</a>; list maintained by contributors on GitHub.
+			</p>
+		</footer>
+	</div>
 </Layout>
+
+<script>
+	const el = document.getElementById('edition-date');
+	if (el)
+		el.textContent = new Date().toLocaleDateString(undefined, {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+		});
+</script>
+
+<style>
+	.sheet {
+		max-width: 56rem;
+		margin: 0 auto;
+		padding: 2rem 1.25rem 3rem;
+	}
+
+	.headline {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+		gap: 1.75rem 2rem;
+		align-items: stretch;
+		margin-top: 0.25rem;
+		margin-bottom: 0;
+	}
+
+	@media (max-width: 720px) {
+		.headline {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.headline__figure {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.headline__frame {
+		border: 3px double var(--ink);
+		background: var(--paper-raised);
+		padding: 4px;
+		box-shadow: inset 0 0 0 1px rgba(20, 18, 15, 0.12), 4px 5px 0 rgba(20, 18, 15, 0.1);
+	}
+
+	.headline__img {
+		display: block;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 800 / 520;
+		object-fit: cover;
+		filter: contrast(1.02);
+	}
+
+	.headline__caption {
+		font-family: var(--font-sans);
+		font-size: 0.68rem;
+		font-style: italic;
+		color: var(--muted);
+		line-height: 1.35;
+		margin: 0;
+		padding: 0 0.15rem;
+		border-left: 3px solid var(--accent);
+		padding-left: 0.65rem;
+	}
+
+	.headline__text {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding-top: 0.25rem;
+		padding-bottom: 0.5rem;
+	}
+
+	.headline__kicker {
+		font-family: var(--font-sans);
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--accent);
+		margin: 0 0 0.5rem;
+	}
+
+	.headline__title {
+		font-family: var(--font-display);
+		font-size: clamp(1.65rem, 3.6vw, 2.35rem);
+		font-weight: 700;
+		line-height: 1.14;
+		margin: 0 0 1rem;
+		letter-spacing: -0.015em;
+	}
+
+	.headline__description {
+		margin: 0;
+		font-size: 0.98rem;
+		line-height: 1.62;
+		color: var(--ink);
+		max-width: 36rem;
+	}
+
+	.headline__rule {
+		margin-top: 1.75rem;
+		margin-bottom: 1.75rem;
+	}
+
+	.masthead {
+		text-align: center;
+		margin-bottom: 1.5rem;
+	}
+
+	.masthead__edition {
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: var(--muted);
+		margin: 0 0 0.5rem;
+	}
+
+	.masthead__label {
+		margin-right: 0.5rem;
+	}
+
+	.masthead__title {
+		font-family: var(--font-display);
+		font-size: clamp(2.75rem, 8vw, 4.25rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		line-height: 0.95;
+		margin: 0;
+		text-transform: uppercase;
+		border-bottom: 4px double var(--ink);
+		display: inline-block;
+		padding-bottom: 0.35rem;
+	}
+
+	.masthead__tagline {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 1.2rem;
+		margin: 0.6rem 0 0.75rem;
+		color: var(--muted);
+	}
+
+	.masthead__dek {
+		font-size: 0.95rem;
+		max-width: 36rem;
+		margin: 0 auto;
+		color: var(--ink);
+	}
+
+	.rule {
+		border: none;
+		border-top: 1px solid var(--rule);
+		margin: 1.5rem 0;
+	}
+
+	.rule--thick {
+		border-top-width: 3px;
+		border-color: var(--ink);
+		margin-top: 1.25rem;
+	}
+
+	.columns {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		gap: 1.25rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.card {
+		border: 2px solid var(--ink);
+		padding: 1rem 1.1rem 1.15rem;
+		background: var(--paper-raised);
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
+		box-shadow: 3px 3px 0 rgba(20, 18, 15, 0.08);
+	}
+
+	.card--accent {
+		background: linear-gradient(160deg, #fff9ef 0%, var(--paper-raised) 50%);
+		border-width: 3px;
+	}
+
+	.card__heading {
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		font-weight: 700;
+		margin: 0 0 0.5rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		border-bottom: 2px solid var(--ink);
+		padding-bottom: 0.35rem;
+	}
+
+	.card__lede {
+		margin: 0 0 0.65rem;
+		font-size: 0.88rem;
+		flex: 1;
+	}
+
+	.card__bullets {
+		margin: 0 0 0.85rem;
+		padding-left: 1.1rem;
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+
+	.card__link {
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		text-decoration: none;
+		color: var(--accent);
+		margin-top: auto;
+	}
+
+	.card__link:hover {
+		color: var(--accent-hover);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.foot {
+		font-size: 0.85rem;
+		color: var(--muted);
+	}
+
+	.foot p {
+		margin: 0 0 0.75rem;
+	}
+
+	.foot__small {
+		font-size: 0.78rem;
+		line-height: 1.5;
+	}
+
+	.foot code {
+		font-size: 0.85em;
+		background: rgba(20, 18, 15, 0.06);
+		padding: 0.1em 0.35em;
+	}
+</style>
