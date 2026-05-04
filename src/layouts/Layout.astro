@@ -82,4 +82,39 @@ const {
 		outline: 2px solid var(--accent);
 		outline-offset: 3px;
 	}
+
+	.dateline {
+		font-variant: small-caps;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+	}
+
+	.article-end::after {
+		content: '❦';
+		display: block;
+		text-align: center;
+		color: var(--rule);
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+		line-height: 1;
+		margin-top: 0.6rem;
+	}
+
+	.continued {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 0.85rem;
+		color: var(--muted);
+		text-decoration: none;
+		margin-left: 0.4rem;
+		white-space: nowrap;
+	}
+
+	.continued::first-letter {
+		color: var(--accent);
+	}
+
+	.continued:hover {
+		color: var(--ink);
+	}
 </style>

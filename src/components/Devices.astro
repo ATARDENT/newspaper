@@ -1,0 +1,588 @@
+---
+import { siLinux, siApple, siAndroid } from 'simple-icons';
+
+const refreshMs = 15_000;
+
+// simple-icons no longer ships a Windows/Microsoft brand mark (Microsoft trademark
+// request), so we use a plain four-pane geometric mark for Windows machines.
+const WINDOWS_PATH = 'M2 3h9v9H2zM13 3h9v9h-9zM2 13h9v9H2zM13 13h9v9h-9z';
+// Generic monitor outline for unknown OSes.
+const GENERIC_PATH =
+	'M3 4h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm5 16h8m-4-3v3';
+
+const OS_ICONS: Record<string, { path: string; outline?: boolean }> = {
+	linux: { path: siLinux.path },
+	windows: { path: WINDOWS_PATH },
+	macos: { path: siApple.path },
+	ios: { path: siApple.path },
+	android: { path: siAndroid.path },
+	other: { path: GENERIC_PATH, outline: true },
+};
+---
+
+<section class="wire" aria-labelledby="wire-heading" data-refresh-ms={refreshMs}>
+	<header class="wire__mast">
+		<div class="wire__rule wire__rule--top" aria-hidden="true" />
+		<p class="wire__kicker">From the wire</p>
+		<h2 id="wire-heading" class="wire__title">Tailnet Roll</h2>
+		<p class="wire__sub">
+			Live status of every machine on the tailnet, polled every {Math.round(refreshMs / 1000)}s.
+			Source: <code>/api/devices.json</code>.
+		</p>
+		<div class="wire__rule" aria-hidden="true" />
+	</header>
+
+	<div class="wire__broadsheet">
+		<div class="wire__main">
+			<div class="wire__main-inner">
+				<ul class="wire-list" data-rows>
+					<li class="wire-row wire-row--placeholder">Tapping the wire…</li>
+				</ul>
+			</div>
+		</div>
+
+		<aside class="wire__aside" aria-label="Tailnet status summary">
+			<p class="aside__kicker">Tailnet status</p>
+			<div class="aside__rule aside__rule--thick" aria-hidden="true" />
+
+			<dl class="aside__counts">
+				<div class="aside__count" data-count="online">
+					<dt class="aside__label">
+						<span class="pip pip-online" aria-hidden="true"></span>Online
+					</dt>
+					<dd class="aside__value" data-count-online>—</dd>
+				</div>
+				<div class="aside__count" data-count="idle">
+					<dt class="aside__label">
+						<span class="pip pip-idle" aria-hidden="true"></span>Idle
+					</dt>
+					<dd class="aside__value" data-count-idle>—</dd>
+				</div>
+				<div class="aside__count" data-count="offline">
+					<dt class="aside__label">
+						<span class="pip pip-offline" aria-hidden="true"></span>Offline
+					</dt>
+					<dd class="aside__value" data-count-offline>—</dd>
+				</div>
+			</dl>
+
+			<div class="aside__rule" aria-hidden="true" />
+
+			<dl class="aside__meta">
+				<div>
+					<dt>Tailnet</dt>
+					<dd data-tailnet>—</dd>
+				</div>
+				<div>
+					<dt>Filed</dt>
+					<dd data-filed>—</dd>
+				</div>
+			</dl>
+		</aside>
+	</div>
+</section>
+
+<script define:vars={{ OS_ICONS }}>
+	const root = document.querySelector('.wire');
+	if (root) {
+		const tbody = root.querySelector('[data-rows]');
+		const $countOnline = root.querySelector('[data-count-online]');
+		const $countIdle = root.querySelector('[data-count-idle]');
+		const $countOffline = root.querySelector('[data-count-offline]');
+		const $tailnet = root.querySelector('[data-tailnet]');
+		const $filed = root.querySelector('[data-filed]');
+		const refreshMs = Number(root.dataset.refreshMs ?? '15000');
+		const dateFmt = new Intl.DateTimeFormat('en-GB', {
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric',
+		});
+		const timeFmt = new Intl.DateTimeFormat('en-US', {
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true,
+		});
+		const stampFmt = new Intl.DateTimeFormat(undefined, {
+			hour: 'numeric',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: true,
+		});
+
+		const setCounts = (online, idle, offline) => {
+			if ($countOnline) $countOnline.textContent = String(online);
+			if ($countIdle) $countIdle.textContent = String(idle);
+			if ($countOffline) $countOffline.textContent = String(offline);
+		};
+
+		const setMeta = ({ tailnet, filed, error }) => {
+			if ($tailnet) $tailnet.textContent = tailnet || '—';
+			if ($filed)
+				$filed.textContent = error ? `Failed ${filed}` : `Filed ${filed}`;
+		};
+
+		const escape = (s) =>
+			String(s).replace(
+				/[&<>"']/g,
+				(c) =>
+					({
+						'&': '&amp;',
+						'<': '&lt;',
+						'>': '&gt;',
+						'"': '&quot;',
+						"'": '&#39;',
+					})[c],
+			);
+
+		const iconFor = (os) => {
+			const icon = OS_ICONS[os] ?? OS_ICONS.other;
+			const attrs = icon.outline
+				? 'viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"'
+				: 'viewBox="0 0 24 24" width="16" height="16" fill="currentColor"';
+			return `<svg ${attrs} aria-hidden="true" style="display:block;flex-shrink:0"><path d="${icon.path}"/></svg>`;
+		};
+
+		const renderRow = (d) => {
+			const seen = d.lastSeenISO ? new Date(d.lastSeenISO) : null;
+			const valid = seen && !Number.isNaN(seen.getTime());
+			const date = valid ? dateFmt.format(seen) : '—';
+			const time = valid ? timeFmt.format(seen) : '—';
+			const label = d.status.toUpperCase();
+			return `
+				<li class="wire-row" data-status="${d.status}">
+					<span class="wire-row__os badge badge-${d.os}" aria-label="${escape(d.os)}">${iconFor(d.os)}</span>
+					<span class="wire-row__name">${escape(d.name)}</span>
+					<span class="wire-row__leader" aria-hidden="true"></span>
+					<span class="wire-row__date">${escape(date)}</span>
+					<span class="wire-row__time">${escape(time)}</span>
+					<span class="wire-row__status">
+						<span class="wire-row__pip" aria-hidden="true"></span>
+						<span class="wire-row__statusLabel">${label}</span>
+					</span>
+				</li>
+			`;
+		};
+
+		const renderEmpty = (msg) =>
+			`<li class="wire-row wire-row--placeholder">${escape(msg)}</li>`;
+
+		const refresh = async () => {
+			if (!tbody) return;
+			const filedAt = () => stampFmt.format(new Date());
+			try {
+				const res = await fetch('/api/devices.json', { cache: 'no-store' });
+				const data = await res.json();
+				if (data.error && (!data.devices || data.devices.length === 0)) {
+					tbody.innerHTML = renderEmpty(`Wire down: ${data.error}`);
+					setCounts(0, 0, 0);
+					setMeta({ tailnet: data.tailnet, filed: filedAt(), error: true });
+					return;
+				}
+				if (!data.devices || data.devices.length === 0) {
+					tbody.innerHTML = renderEmpty('No machines reported on the tailnet.');
+					setCounts(0, 0, 0);
+					setMeta({ tailnet: data.tailnet, filed: filedAt() });
+					return;
+				}
+				tbody.innerHTML = data.devices.map(renderRow).join('');
+				const counts = data.devices.reduce(
+					(acc, d) => {
+						acc[d.status]++;
+						return acc;
+					},
+					{ online: 0, idle: 0, offline: 0 },
+				);
+				setCounts(counts.online, counts.idle, counts.offline);
+				setMeta({ tailnet: data.tailnet, filed: filedAt() });
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : 'network error';
+				tbody.innerHTML = renderEmpty(`Wire down: ${msg}`);
+				setCounts(0, 0, 0);
+				setMeta({ tailnet: '', filed: filedAt(), error: true });
+			}
+		};
+
+		refresh();
+		setInterval(refresh, refreshMs);
+	}
+</script>
+
+<style>
+	.wire {
+		margin-top: 2.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.wire__mast {
+		text-align: center;
+		margin-bottom: 1rem;
+	}
+
+	.wire__rule {
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent 0,
+			var(--rule) 12%,
+			var(--ink) 50%,
+			var(--rule) 88%,
+			transparent 100%
+		);
+		opacity: 0.85;
+	}
+
+	.wire__rule--top {
+		height: 3px;
+		background: repeating-linear-gradient(
+			90deg,
+			var(--ink) 0,
+			var(--ink) 2px,
+			transparent 2px,
+			transparent 5px
+		);
+		margin-bottom: 0.85rem;
+		opacity: 1;
+	}
+
+	.wire__kicker {
+		font-family: var(--font-sans);
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--ink);
+		margin: 0 0 0.35rem;
+	}
+
+	.wire__title {
+		font-family: var(--font-display);
+		font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		margin: 0 0 0.5rem;
+	}
+
+	.wire__sub {
+		font-size: 0.8rem;
+		color: var(--muted);
+		max-width: 40rem;
+		margin: 0 auto 1rem;
+		line-height: 1.45;
+		font-style: italic;
+	}
+
+	.wire__sub code {
+		font-style: normal;
+		font-size: 0.88em;
+		background: rgba(20, 18, 15, 0.07);
+		padding: 0.08em 0.3em;
+	}
+
+	/* Broadsheet: ~65/35 two-column with thick double rule between */
+	.wire__broadsheet {
+		display: grid;
+		grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+		border: 3px double var(--ink);
+		background: var(--paper-raised);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.65),
+			2px 3px 0 rgba(25, 20, 15, 0.1);
+	}
+
+	/* Sidebar dictates row height; absolute inner lets the table scroll
+	   inside without contributing to row height. */
+	.wire__main {
+		position: relative;
+		border-right: 3px double var(--ink);
+		min-width: 0;
+	}
+
+	.wire__main-inner {
+		position: absolute;
+		inset: 0;
+		overflow-y: auto;
+		padding: 0.25rem 0.75rem;
+	}
+
+	.wire__aside {
+		padding: 0.95rem 1.05rem;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.wire-list {
+		list-style: none;
+		margin: 0;
+		padding: 0.25rem 0;
+		font-family: var(--font-sans);
+	}
+
+	/* Sidebar */
+	.aside__kicker {
+		font-family: var(--font-sans);
+		font-size: 0.62rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.22em;
+		color: var(--ink);
+		margin: 0 0 0.4rem;
+		text-align: center;
+	}
+
+	.aside__rule {
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent 0,
+			var(--rule) 8%,
+			var(--ink) 50%,
+			var(--rule) 92%,
+			transparent 100%
+		);
+		margin: 0.35rem 0;
+	}
+
+	.aside__rule--thick {
+		height: 3px;
+		background: repeating-linear-gradient(
+			90deg,
+			var(--ink) 0,
+			var(--ink) 2px,
+			transparent 2px,
+			transparent 5px
+		);
+		margin-bottom: 0.85rem;
+	}
+
+	.aside__counts {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.aside__count {
+		display: grid;
+		grid-template-columns: 2.6rem 1fr;
+		align-items: baseline;
+		column-gap: 0.65rem;
+		padding: 0.15rem 0;
+	}
+
+	.aside__value {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 1.7rem;
+		line-height: 1;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		color: var(--ink);
+	}
+
+	.aside__label {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		color: var(--ink);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.aside__label .pip {
+		display: inline-block;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.aside__label .pip-online  { background: var(--accent); }
+	.aside__label .pip-idle    { background: var(--muted); }
+	.aside__label .pip-offline {
+		background: transparent;
+		border: 1px solid var(--rule);
+	}
+
+	.aside__meta {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.aside__meta > div {
+		display: grid;
+		grid-template-columns: 4.5rem 1fr;
+		column-gap: 0.5rem;
+		align-items: baseline;
+	}
+
+	.aside__meta dt {
+		font-family: var(--font-sans);
+		font-size: 0.6rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--muted);
+	}
+
+	.aside__meta dd {
+		margin: 0;
+		font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+		font-size: 0.78rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--ink);
+		overflow-wrap: anywhere;
+	}
+
+	@media (max-width: 720px) {
+		.wire__broadsheet {
+			grid-template-columns: 1fr;
+		}
+
+		.wire__main {
+			border-right: none;
+			border-bottom: 3px double var(--ink);
+		}
+
+		/* Drop the absolute scroll cap on narrow screens so the stack
+		   flows naturally instead of clipping. */
+		.wire__main-inner {
+			position: static;
+			overflow: visible;
+			padding: 0.25rem 0.5rem;
+		}
+
+		.wire__aside {
+			padding: 0.85rem 0.75rem;
+		}
+	}
+</style>
+
+<!-- Row-internal styles are global so JS-injected rows (no Astro cid) get them. -->
+<style is:global>
+	.wire-row {
+		display: grid;
+		grid-template-columns: auto auto 1fr auto auto auto;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.55rem 0.1rem;
+		border-bottom: 1px solid var(--rule);
+		color: var(--ink);
+	}
+
+	.wire-row:last-child { border-bottom: none; }
+
+	.wire-row--placeholder {
+		display: block;
+		color: var(--muted);
+		text-align: center;
+		padding: 1.4rem 0.6rem;
+		font-style: italic;
+		grid-template-columns: none;
+	}
+
+	.wire-row__name {
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: 1rem;
+		color: var(--ink);
+		white-space: nowrap;
+	}
+
+	.wire-row__leader {
+		border-bottom: 1.5px dotted var(--rule);
+		align-self: end;
+		margin-bottom: 0.42rem;
+		min-width: 1rem;
+	}
+
+	.wire-row__date,
+	.wire-row__time {
+		font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+		font-variant-numeric: tabular-nums;
+		font-size: 0.82rem;
+		color: var(--muted);
+		white-space: nowrap;
+	}
+
+	.wire-row__status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.18em;
+		white-space: nowrap;
+		min-width: 5.2rem;
+		justify-content: flex-end;
+	}
+
+	.wire-row__pip {
+		display: inline-block;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.wire-row[data-status='online'] .wire-row__statusLabel { color: var(--accent); }
+	.wire-row[data-status='online'] .wire-row__pip { background: var(--accent); }
+
+	.wire-row[data-status='idle'] .wire-row__statusLabel { color: var(--muted); }
+	.wire-row[data-status='idle'] .wire-row__pip { background: var(--muted); }
+
+	.wire-row[data-status='offline'] .wire-row__statusLabel { color: var(--rule); }
+	.wire-row[data-status='offline'] .wire-row__pip {
+		background: transparent;
+		border: 1px solid var(--rule);
+	}
+
+	.wire-row[data-status='offline'] {
+		opacity: 0.7;
+	}
+
+	.wire-row[data-status='offline'] .wire-row__name {
+		text-decoration: line-through;
+		text-decoration-color: var(--muted);
+		text-decoration-thickness: 1px;
+	}
+
+	.wire-row .badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		border: 2px solid var(--ink);
+		background: var(--paper);
+		color: var(--ink);
+		flex-shrink: 0;
+		box-shadow: 1px 1px 0 rgba(20, 18, 15, 0.15);
+	}
+
+	.wire-row .badge-linux   { background: #f6ecdb; }
+	.wire-row .badge-windows { background: #e7e8ec; }
+	.wire-row .badge-macos   { background: #efe8e0; }
+	.wire-row .badge-ios     { background: #e6ece8; }
+	.wire-row .badge-android { background: #e8efe1; }
+
+	@media (max-width: 720px) {
+		.wire-row {
+			grid-template-columns: auto 1fr auto;
+			row-gap: 0.2rem;
+		}
+		.wire-row__leader,
+		.wire-row__date,
+		.wire-row__time { display: none; }
+	}
+</style>

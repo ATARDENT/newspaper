@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\Programming\\\\Web\\\\newspaper\\\\src\" -Recurse -Name)",
+      "Bash(npm install *)",
+      "PowerShell(npm run dev)",
+      "PowerShell(npx astro dev --force)",
+      "Bash(curl -s http://localhost:4322/ -o /d/Programming/Web/newspaper/page-snapshot.html)"
+    ]
+  }
+}

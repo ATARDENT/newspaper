@@ -1,5 +1,17 @@
 ---
-import { DEADLINES } from '../data/submission-deadlines';
+import {
+	DEADLINES,
+	daysUntil,
+	groupDeadlines,
+	type DeadlineGroup,
+} from '../data/submission-deadlines';
+
+const renderedAt = new Date();
+const grouped = groupDeadlines(DEADLINES, renderedAt);
+
+const allGroups: DeadlineGroup[] = grouped.lead
+	? [{ label: 'Next bell', kind: 'lead', items: [grouped.lead] }, ...grouped.groups]
+	: grouped.groups;
 ---
 
 <section class="lobby" aria-labelledby="lobby-heading">
@@ -13,63 +25,93 @@ import { DEADLINES } from '../data/submission-deadlines';
 		<div class="lobby__rule" aria-hidden="true" />
 	</header>
 
-	<div class="lobby__grid">
-		{
-			DEADLINES.map((d) => (
-				<article
-					class:list={[
-						'lobby-card',
-						d.kind === 'outside_window' && 'lobby-card--outside',
-						d.kind === 'rolling' && 'lobby-card--rolling',
-					]}
-					data-deadline-id={d.id}
-					data-kind={d.kind}
-					data-tz={d.clockTimezone}
-					data-deadline={d.deadlineIso ?? ''}
-				>
-					<div class="lobby-card__plaque">
-						<h3 class="lobby-card__name">{d.name}</h3>
-						<p class="lobby-card__loc">{d.locationLine}</p>
-					</div>
+	{
+		allGroups.map((g) => (
+			<section
+				class:list={['lobby__group', `lobby__group--${g.kind}`]}
+				aria-label={g.label}
+			>
+				<header class="lobby__group-head">
+					<p class="lobby__group-label">{g.label}</p>
+					<hr class="lobby__group-rule" aria-hidden="true" />
+				</header>
+				<div class="lobby__grid">
+					{g.items.map((d) => {
+						const days = daysUntil(d.deadlineIso, renderedAt);
+						const imminent =
+							d.kind === 'countdown' && days !== null && days < 31;
+						return (
+							<article
+								class:list={[
+									'lobby-card',
+									g.kind === 'lead' && 'lobby-card--lead',
+									d.kind === 'outside_window' && 'lobby-card--outside',
+									d.kind === 'rolling' && 'lobby-card--rolling',
+									imminent && 'lobby-card--imminent',
+								]}
+								data-deadline-id={d.id}
+								data-kind={d.kind}
+								data-tz={d.clockTimezone}
+								data-deadline={d.deadlineIso ?? ''}
+							>
+								<div class="lobby-card__plaque">
+									<h3 class="lobby-card__name">{d.name}</h3>
+									<p class="lobby-card__loc">{d.locationLine}</p>
+								</div>
 
-					<div class="lobby-card__clockRow">
-						<div class="lobby-clock">
-							<span class="lobby-clock__label">Local time</span>
-							<time class="lobby-clock__face" data-slot="local-time" datetime="">
-								—:—:—
-							</time>
-							<span class="lobby-clock__tz" data-slot="tz-abbr" />
-						</div>
-					</div>
+								<div class="lobby-card__clockRow">
+									<div class="lobby-clock">
+										<span class="lobby-clock__label">Local time</span>
+										<time
+											class="lobby-clock__face"
+											data-slot="local-time"
+											datetime=""
+										>
+											—:—:—
+										</time>
+										<span class="lobby-clock__tz" data-slot="tz-abbr" />
+									</div>
+								</div>
 
-					<div class="lobby-card__countBlock">
-						<p class="lobby-count__label">To submission bell</p>
-						<div class="lobby-count" data-slot="countdown-wrap">
-							<div class="lobby-count__cell">
-								<span class="lobby-count__num" data-slot="d">00</span>
-								<span class="lobby-count__unit">days</span>
-							</div>
-							<div class="lobby-count__cell">
-								<span class="lobby-count__num" data-slot="h">00</span>
-								<span class="lobby-count__unit">hrs</span>
-							</div>
-							<div class="lobby-count__cell">
-								<span class="lobby-count__num" data-slot="m">00</span>
-								<span class="lobby-count__unit">min</span>
-							</div>
-							<div class="lobby-count__cell">
-								<span class="lobby-count__num" data-slot="s">00</span>
-								<span class="lobby-count__unit">sec</span>
-							</div>
-						</div>
-						<p class="lobby-card__foot" data-slot="status">
-							{d.subtitle}
-						</p>
-					</div>
-				</article>
-			))
-		}
-	</div>
+								<div class="lobby-card__countBlock">
+									<p class="lobby-count__label">To submission bell</p>
+									<div class="lobby-count" data-slot="countdown-wrap">
+										<div class="lobby-count__cell">
+											<span class="lobby-count__num" data-slot="d">
+												00
+											</span>
+											<span class="lobby-count__unit">days</span>
+										</div>
+										<div class="lobby-count__cell">
+											<span class="lobby-count__num" data-slot="h">
+												00
+											</span>
+											<span class="lobby-count__unit">hrs</span>
+										</div>
+										<div class="lobby-count__cell">
+											<span class="lobby-count__num" data-slot="m">
+												00
+											</span>
+											<span class="lobby-count__unit">min</span>
+										</div>
+										<div class="lobby-count__cell">
+											<span class="lobby-count__num" data-slot="s">
+												00
+											</span>
+											<span class="lobby-count__unit">sec</span>
+										</div>
+									</div>
+									<p class="lobby-card__foot" data-slot="status">
+										{d.subtitle}
+									</p>
+								</div>
+							</article>
+						);
+					})}
+				</div>
+			</section>
+		))
+	}
 </section>
 
 <script>
@@ -245,10 +287,50 @@ import { DEADLINES } from '../data/submission-deadlines';
 		opacity: 1;
 	}
 
+	/* Group dateline header */
+	.lobby__group {
+		margin-bottom: 1.5rem;
+	}
+
+	.lobby__group-head {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: baseline;
+		gap: 0.85rem;
+		margin: 0 0 0.85rem;
+	}
+
+	.lobby__group-label {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: 0.72rem;
+		font-weight: 700;
+		font-variant: small-caps;
+		letter-spacing: 0.18em;
+		color: var(--ink);
+	}
+
+	.lobby__group-rule {
+		border: none;
+		border-top: 1px solid var(--ink);
+		margin: 0;
+		align-self: center;
+	}
+
+	.lobby__group--lead .lobby__group-label { color: var(--accent); }
+
+	.lobby__group--rolling .lobby__group-label,
+	.lobby__group--outside .lobby__group-label { color: var(--muted); }
+
 	.lobby__grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
 		gap: 1rem 1rem;
+	}
+
+	/* LEAD group: card spans full width with bigger typographic scale */
+	.lobby__group--lead .lobby__grid {
+		grid-template-columns: 1fr;
 	}
 
 	.lobby-card {
@@ -269,6 +351,62 @@ import { DEADLINES } from '../data/submission-deadlines';
 		pointer-events: none;
 	}
 
+	.lobby-card--lead {
+		padding: 1.5rem 2rem 1.4rem;
+		display: grid;
+		grid-template-columns: 1.2fr 1fr 1.6fr;
+		grid-template-areas: 'plaque clock count';
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.lobby-card--lead .lobby-card__plaque {
+		grid-area: plaque;
+		text-align: left;
+		border-bottom: none;
+		padding-bottom: 0;
+		margin-bottom: 0;
+	}
+
+	.lobby-card--lead .lobby-card__clockRow {
+		grid-area: clock;
+		margin-bottom: 0;
+	}
+
+	.lobby-card--lead .lobby-card__countBlock {
+		grid-area: count;
+	}
+
+	.lobby-card--lead .lobby-card__name {
+		font-size: 1.65rem;
+		letter-spacing: 0.01em;
+	}
+
+	.lobby-card--lead .lobby-card__loc {
+		font-size: 0.72rem;
+		margin-top: 0.25rem;
+	}
+
+	.lobby-card--lead .lobby-clock {
+		min-width: 14rem;
+	}
+
+	.lobby-card--lead .lobby-clock__face {
+		font-size: 1.25rem;
+	}
+
+	.lobby-card--lead .lobby-count__num {
+		font-size: 2.4rem;
+	}
+
+	.lobby-card--lead .lobby-count__cell {
+		padding: 0.7rem 0.25rem 0.55rem;
+	}
+
+	.lobby-card--lead .lobby-count__unit {
+		font-size: 0.6rem;
+	}
+
 	.lobby-card--outside {
 		opacity: 0.72;
 		filter: grayscale(0.25);
@@ -277,6 +415,17 @@ import { DEADLINES } from '../data/submission-deadlines';
 	.lobby-card--rolling .lobby-count__num {
 		font-weight: 500;
 		letter-spacing: 0.2em;
+	}
+
+	/* Imminent (≤30d): star prefix + bold oxblood day count */
+	.lobby-card--imminent:not(.lobby-card--lead) .lobby-card__name::before {
+		content: '★ ';
+		color: var(--accent);
+	}
+
+	.lobby-card--imminent [data-slot='d'] {
+		color: var(--accent);
+		font-weight: 800;
 	}
 
 	.lobby-card__plaque {
@@ -417,6 +566,22 @@ import { DEADLINES } from '../data/submission-deadlines';
 		text-align: center;
 		margin: 0.5rem 0 0;
 		line-height: 1.35;
+	}
+
+	@media (max-width: 700px) {
+		.lobby-card--lead {
+			grid-template-columns: 1fr;
+			grid-template-areas:
+				'plaque'
+				'clock'
+				'count';
+			gap: 0.85rem;
+			padding: 1rem 1rem 0.95rem;
+		}
+
+		.lobby-card--lead .lobby-card__plaque { text-align: center; }
+		.lobby-card--lead .lobby-card__name { font-size: 1.35rem; }
+		.lobby-card--lead .lobby-count__num { font-size: 1.6rem; }
 	}
 
 	@media (max-width: 520px) {

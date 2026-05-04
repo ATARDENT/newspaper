@@ -27,6 +27,101 @@ export type DeadlineDef = {
 export const aoeEndUtc = (y: number, month: number, day: number) =>
 	new Date(Date.UTC(y, month - 1, day + 1, 11, 59, 59, 0)).toISOString();
 
+export type DeadlineGroup = {
+	label: string;
+	kind: 'lead' | 'urgent' | 'date' | 'rolling' | 'outside';
+	items: DeadlineDef[];
+};
+
+export type GroupedDeadlines = {
+	lead: DeadlineDef | null;
+	groups: DeadlineGroup[];
+};
+
+const SEASONS = ['Winter', 'Spring', 'Summer', 'Fall'] as const;
+const seasonOf = (month0: number) => SEASONS[Math.floor(month0 / 3)]!;
+
+const DAY_MS = 86_400_000;
+
+export function daysUntil(iso: string | undefined, now: Date): number | null {
+	if (!iso) return null;
+	const target = new Date(iso).getTime();
+	if (Number.isNaN(target)) return null;
+	return Math.floor((target - now.getTime()) / DAY_MS);
+}
+
+/**
+ * Group deadlines for the Submission Lobby:
+ *   - lead: nearest upcoming countdown
+ *   - “Due this quarter” / “Next quarter” / “Later in [year]” / “[Season] [Year]”
+ *   - “Rolling” and “Outside window” buckets at the tail
+ *
+ * Sort: countdowns ascending by deadlineIso. Rolling/outside alphabetical by name.
+ */
+export function groupDeadlines(
+	items: readonly DeadlineDef[],
+	now: Date = new Date(),
+): GroupedDeadlines {
+	const countdowns = items
+		.filter((d) => d.kind === 'countdown' && d.deadlineIso)
+		.slice()
+		.sort((a, b) => (a.deadlineIso! < b.deadlineIso! ? -1 : 1));
+
+	const rolling = items
+		.filter((d) => d.kind === 'rolling')
+		.slice()
+		.sort((a, b) => a.name.localeCompare(b.name));
+
+	const outside = items
+		.filter((d) => d.kind === 'outside_window')
+		.slice()
+		.sort((a, b) => a.name.localeCompare(b.name));
+
+	const lead = countdowns[0] ?? null;
+	const rest = countdowns.slice(1);
+
+	const buckets = new Map<string, DeadlineDef[]>();
+	const order: string[] = [];
+	const push = (label: string, item: DeadlineDef) => {
+		const existing = buckets.get(label);
+		if (existing) {
+			existing.push(item);
+		} else {
+			buckets.set(label, [item]);
+			order.push(label);
+		}
+	};
+
+	const currentYear = now.getUTCFullYear();
+
+	for (const d of rest) {
+		const days = daysUntil(d.deadlineIso, now)!;
+		const targetDate = new Date(d.deadlineIso!);
+		const targetYear = targetDate.getUTCFullYear();
+
+		if (days <= 90) {
+			push('Due this quarter', d);
+		} else if (days <= 180) {
+			push('Next quarter', d);
+		} else if (targetYear === currentYear) {
+			push(`Later in ${currentYear}`, d);
+		} else {
+			push(`${seasonOf(targetDate.getUTCMonth())} ${targetYear}`, d);
+		}
+	}
+
+	const groups: DeadlineGroup[] = order.map((label) => ({
+		label,
+		kind: label === 'Due this quarter' ? 'urgent' : 'date',
+		items: buckets.get(label)!,
+	}));
+
+	if (rolling.length) groups.push({ label: 'Rolling', kind: 'rolling', items: rolling });
+	if (outside.length) groups.push({ label: 'Outside window', kind: 'outside', items: outside });
+
+	return { lead, groups };
+}
+
 export const DEADLINES: readonly DeadlineDef[] = [
 	{
 		id: 'conll-2027',

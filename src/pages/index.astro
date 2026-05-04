@@ -2,25 +2,32 @@
 import Layout from '../layouts/Layout.astro';
 import PaperOfTheDay from '../components/PaperOfTheDay.astro';
 import SubmissionLobby from '../components/SubmissionLobby.astro';
+import Devices from '../components/Devices.astro';
 
-/** Lead story — set `imageSrc` to a file in `public/` (e.g. `/images/lab.jpg`). */
 const headline = {
 	title: 'Ardent: research at the pace of today’s language models',
+	deck:
+		'A working dashboard for the lab — papers, deadlines, machines, and the moods of GPUs, all in one place.',
 	description:
 		'We study how large models reason, align, and serve people — and we share papers, code, and tools as we go. This front page is your dispatch desk: deadlines, reading, and lab links in one place.',
-	imageSrc: '/images/ardent-headline.svg',
-	imageAlt: 'Ardent project — replace this placeholder with your photograph or figure.',
-	caption: 'Lead illustration — swap in a photo or figure under public/images/',
 };
 ---
 
 <Layout title="Ardent · Research Gazette" description="Ardent research — publications, tools, information, and workspace.">
 	<div class="sheet">
+		<aside class="issue-ribbon" aria-label="Edition info">
+			<span id="ribbon-vol">Vol. —</span>
+			<span class="issue-ribbon__dot" aria-hidden="true">·</span>
+			<span id="ribbon-no">No. —</span>
+			<span class="issue-ribbon__dot" aria-hidden="true">·</span>
+			<time id="edition-date">—</time>
+			<span class="issue-ribbon__dot" aria-hidden="true">·</span>
+			<span>Ardent, Internet</span>
+			<span class="issue-ribbon__dot" aria-hidden="true">·</span>
+			<span>One Crypto Penny</span>
+		</aside>
+
 		<header class="masthead">
-			<p class="masthead__edition">
-				<span class="masthead__label">Edition</span>
-				<time id="edition-date"></time>
-			</p>
 			<h1 class="masthead__title">The Ardent</h1>
 			<p class="masthead__tagline">Research &amp; Ideas</p>
 			<p class="masthead__dek">
@@ -29,107 +36,134 @@ const headline = {
 			<hr class="rule rule--thick" />
 		</header>
 
-		<section class="headline" aria-labelledby="headline-title">
-			<figure class="headline__figure">
-				<div class="headline__frame">
-					<img
-						class="headline__img"
-						src={headline.imageSrc}
-						alt={headline.imageAlt}
-						width="800"
-						height="520"
-						loading="eager"
-						fetchpriority="high"
-					/>
+		<div class="paper-grid">
+			<aside class="fold span-4" aria-label="Inside today's edition">
+				<p class="fold__kicker">Inside today's edition</p>
+				<ul class="fold__list">
+					<li><a href="#sections"><span class="fold__name">Sections</span><span class="fold__dots" aria-hidden="true"></span><span class="fold__page">B1</span></a></li>
+					<li><a href="#paper"><span class="fold__name">Paper of the day</span><span class="fold__dots" aria-hidden="true"></span><span class="fold__page">B4</span></a></li>
+					<li><a href="#calendar"><span class="fold__name">Calendar</span><span class="fold__dots" aria-hidden="true"></span><span class="fold__page">C1</span></a></li>
+					<li><a href="#wire"><span class="fold__name">Off the wire</span><span class="fold__dots" aria-hidden="true"></span><span class="fold__page">D1</span></a></li>
+				</ul>
+			</aside>
+
+			<section class="headline span-8" aria-labelledby="headline-title">
+				<div class="headline__text">
+					<p class="headline__kicker">Front page</p>
+					<h2 id="headline-title" class="headline__title">{headline.title}</h2>
+					<p class="headline__deck">{headline.deck}</p>
+					<p class="headline__byline">By the editorial desk · Dispatch No. <span id="byline-no">—</span></p>
+					<p class="headline__description article-end">
+						<span class="dateline" id="headline-dateline">Menlo Park —</span> {headline.description}
+						<a class="continued" href="#paper">→ Continued on B4</a>
+					</p>
 				</div>
-				<figcaption class="headline__caption">{headline.caption}</figcaption>
-			</figure>
-			<div class="headline__text">
-				<p class="headline__kicker">Front page</p>
-				<h2 id="headline-title" class="headline__title">{headline.title}</h2>
-				<p class="headline__description">{headline.description}</p>
+			</section>
+
+			<div class="section-banner span-full" id="sections">
+				<span class="section-banner__label">Sections</span>
+				<span class="section-banner__ornament" aria-hidden="true">◆ ◆ ◆</span>
+				<span class="section-banner__page">B</span>
 			</div>
-		</section>
 
-		<hr class="rule headline__rule" />
+			<section class="columns span-8" aria-label="Featured sections">
+					<article class="card card--accent card--publications">
+						<p class="card__kicker">Lead story</p>
+						<h2 class="card__heading">Publications</h2>
+						<p class="card__lede">
+							Preprints, conference papers, and technical reports.<br />Link your PDFs or arXiv pages here.
+						</p>
+						<ul class="card__bullets">
+							<li>Drafts &amp; camera-ready PDFs</li>
+							<li>BibTeX and citation snippets</li>
+						</ul>
+						<a class="card__link" href="#publications">Browse publications →</a>
+					</article>
 
-		<section class="columns" aria-label="Featured sections">
-			<article class="card card--accent">
-				<h2 class="card__heading">Publications</h2>
-				<p class="card__lede">
-					Preprints, conference papers, and technical reports.<br />Link your PDFs or arXiv pages here.
-				</p>
-				<ul class="card__bullets">
-					<li>Drafts &amp; camera-ready PDFs</li>
-					<li>BibTeX and citation snippets</li>
-				</ul>
-				<a class="card__link" href="#publications">Browse publications →</a>
-			</article>
+					<article class="card card--tools">
+						<h2 class="card__heading">Tools</h2>
+						<p class="card__lede">
+							Demos, code releases, notebooks, and scripts that accompany your research.
+						</p>
+						<ul class="card__bullets">
+							<li>Repos &amp; interactive demos</li>
+							<li>Models &amp; datasets</li>
+						</ul>
+						<a class="card__link" href="#tools">Open tools →</a>
+					</article>
 
-			<article class="card">
-				<h2 class="card__heading">Tools</h2>
-				<p class="card__lede">
-					Demos, code releases, notebooks, and scripts that accompany your research.
-				</p>
-				<ul class="card__bullets">
-					<li>Repos &amp; interactive demos</li>
-					<li>Models &amp; datasets</li>
-				</ul>
-				<a class="card__link" href="#tools">Open tools →</a>
-			</article>
+					<article class="card card--info">
+						<h2 class="card__heading">Info</h2>
+						<p class="card__lede">
+							Vision, team, funding acknowledgments, and how to cite or collaborate.
+						</p>
+						<ul class="card__bullets">
+							<li>About &amp; contact</li>
+							<li>Policies &amp; licensing</li>
+						</ul>
+						<a class="card__link" href="#info">Read more →</a>
+					</article>
 
-			<article class="card">
-				<h2 class="card__heading">Info</h2>
-				<p class="card__lede">
-					Vision, team, funding acknowledgments, and how to cite or collaborate.
-				</p>
-				<ul class="card__bullets">
-					<li>About &amp; contact</li>
-					<li>Policies &amp; licensing</li>
-				</ul>
-				<a class="card__link" href="#info">Read more →</a>
-			</article>
+					<article class="card card--working">
+						<h2 class="card__heading">Working space</h2>
+						<p class="card__lede">
+							Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
+						</p>
+						<ul class="card__bullets">
+							<li>Wikis / Notion / Drive links</li>
+							<li>Slack &amp; mail lists</li>
+						</ul>
+						<a class="card__link" href="#workspace">Enter workspace →</a>
+					</article>
 
-			<article class="card">
-				<h2 class="card__heading">Working space</h2>
-				<p class="card__lede">
-					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
-				</p>
-				<ul class="card__bullets">
-					<li>Wikis / Notion / Drive links</li>
-					<li>Slack &amp; mail lists</li>
-				</ul>
-				<a class="card__link" href="#workspace">Enter workspace →</a>
-			</article>
+					<article class="card card--resources">
+						<h2 class="card__heading">Resources</h2>
+						<p class="card__lede">
+							External reading: papers we cite often, datasets we depend on, and tools worth bookmarking.
+						</p>
+						<ul class="card__bullets">
+							<li>Curated reading lists</li>
+							<li>Datasets &amp; benchmarks</li>
+						</ul>
+						<a class="card__link" href="#resources">Browse resources →</a>
+					</article>
 
-			<article class="card">
-				<h2 class="card__heading">Resources</h2>
-				<p class="card__lede">
-					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
-				</p>
-				<ul class="card__bullets">
-					<li>Wikis / Notion / Drive links</li>
-					<li>Slack &amp; mail lists</li>
-				</ul>
-				<a class="card__link" href="#workspace">Enter workspace →</a>
-			</article>
+					<article class="card card--notes">
+						<h2 class="card__heading">Notes</h2>
+						<p class="card__lede">
+							Drafts and dispatches: half-formed ideas, lab notebooks, and posts on the way to becoming papers.
+						</p>
+						<ul class="card__bullets">
+							<li>Lab notebooks &amp; scratch ideas</li>
+							<li>Blog posts &amp; dispatches</li>
+						</ul>
+						<a class="card__link" href="#notes">Read notes →</a>
+					</article>
+			</section>
 
-			<article class="card">
-				<h2 class="card__heading">Notes</h2>
-				<p class="card__lede">
-					Internal hubs: meeting notes, roadmaps, and shared docs for collaborators.
-				</p>
-				<ul class="card__bullets">
-					<li>Wikis / Notion / Drive links</li>
-					<li>Slack &amp; mail lists</li>
-				</ul>
-				<a class="card__link" href="#workspace">Enter workspace →</a>
-			</article>
-		</section>
+			<aside class="span-4 lobby-side" id="paper">
+				<PaperOfTheDay />
+				<aside class="quote" aria-label="Quote of the day">
+					<p class="quote__kicker">Quote of the day</p>
+					<blockquote class="quote__body">All models are wrong, but some are useful.</blockquote>
+					<p class="quote__attr">— George E. P. Box</p>
+				</aside>
+			</aside>
 
-		<SubmissionLobby />
+			<div class="section-banner span-full" id="calendar">
+				<span class="section-banner__label">Calendar</span>
+				<span class="section-banner__ornament" aria-hidden="true">◆ ◆ ◆</span>
+				<span class="section-banner__page">C</span>
+			</div>
 
-		<PaperOfTheDay />
+			<div class="span-full">
+				<SubmissionLobby />
+			</div>
+
+			<div class="span-full" id="wire">
+				<Devices />
+			</div>
+		</div>
 
 		<hr class="rule" />
 		<footer class="foot">
@@ -146,77 +180,281 @@ const headline = {
 </Layout>
 
 <script>
-	const el = document.getElementById('edition-date');
-	if (el)
-		el.textContent = new Date().toLocaleDateString(undefined, {
+	const now = new Date();
+	const dateEl = document.getElementById('edition-date');
+	if (dateEl)
+		dateEl.textContent = now.toLocaleDateString(undefined, {
 			weekday: 'long',
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
 		});
+
+	const volEl = document.getElementById('ribbon-vol');
+	if (volEl) {
+		const startYear = 2025;
+		const v = Math.max(1, now.getFullYear() - startYear + 1);
+		const roman = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+		volEl.textContent = `Vol. ${roman[v] ?? v}`;
+	}
+
+	const yearStart = new Date(now.getFullYear(), 0, 0);
+	const day = Math.floor((now.getTime() - yearStart.getTime()) / 86400000);
+
+	const noEl = document.getElementById('ribbon-no');
+	if (noEl) noEl.textContent = `No. ${day}`;
+
+	const bylineNoEl = document.getElementById('byline-no');
+	if (bylineNoEl) bylineNoEl.textContent = String(day);
+
+	const datelineEl = document.getElementById('headline-dateline');
+	if (datelineEl) {
+		const month = now.toLocaleDateString('en-US', { month: 'long' });
+		datelineEl.textContent = `Menlo Park — ${month} ${now.getDate()} —`;
+	}
 </script>
 
 <style>
 	.sheet {
-		max-width: 56rem;
+		max-width: 72rem;
 		margin: 0 auto;
 		padding: 2rem 1.25rem 3rem;
 	}
 
-	.headline {
+	.paper-grid {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+		grid-template-columns: repeat(12, minmax(0, 1fr));
 		gap: 1.75rem 2rem;
-		align-items: stretch;
-		margin-top: 0.25rem;
-		margin-bottom: 0;
+		align-items: start;
+		margin: 0 0 1.75rem;
 	}
 
-	@media (max-width: 720px) {
-		.headline {
-			grid-template-columns: 1fr;
+	.span-full { grid-column: 1 / -1; }
+	.span-8 { grid-column: span 8; min-width: 0; }
+	.span-4 { grid-column: span 4; min-width: 0; }
+
+	.lobby-side {
+		border-left: 1px solid var(--rule);
+		padding-left: 1.75rem;
+		margin-left: -0.5rem;
+	}
+
+	@media (max-width: 900px) {
+		.paper-grid { gap: 1.5rem; }
+		.span-8, .span-4 { grid-column: 1 / -1; }
+		.lobby-side {
+			border-left: none;
+			padding-left: 0;
+			margin-left: 0;
 		}
 	}
 
-	.headline__figure {
-		margin: 0;
+	.issue-ribbon {
 		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		font-family: var(--font-sans);
+		font-size: 0.62rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.22em;
+		color: var(--muted);
+		border-top: 1px solid var(--ink);
+		border-bottom: 1px solid var(--ink);
+		padding: 0.45rem 0.75rem;
+		margin: -0.5rem 0 1.25rem;
 	}
 
-	.headline__frame {
+	.issue-ribbon__dot {
+		opacity: 0.45;
+	}
+
+	.issue-ribbon time {
+		font-style: italic;
+		text-transform: none;
+		letter-spacing: 0.05em;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		color: var(--ink);
+	}
+
+	.fold {
+		position: relative;
 		border: 3px double var(--ink);
 		background: var(--paper-raised);
-		padding: 4px;
-		box-shadow: inset 0 0 0 1px rgba(20, 18, 15, 0.12), 4px 5px 0 rgba(20, 18, 15, 0.1);
+		padding: 0.85rem 1rem 1rem;
+		box-shadow: 3px 3px 0 rgba(20, 18, 15, 0.08);
+		align-self: stretch;
 	}
 
-	.headline__img {
-		display: block;
-		width: 100%;
-		height: auto;
-		aspect-ratio: 800 / 520;
-		object-fit: cover;
-		filter: contrast(1.02);
-	}
-
-	.headline__caption {
-		font-family: var(--font-sans);
-		font-size: 0.68rem;
+	.fold::after {
+		content: "❦";
+		position: absolute;
+		right: 0.55rem;
+		bottom: 0.35rem;
+		font-family: var(--font-display);
 		font-style: italic;
+		font-size: 1.4rem;
+		color: var(--rule);
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	.fold__kicker {
+		font-family: var(--font-sans);
+		font-size: 0.6rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--ink);
+		margin: 0 0 0.65rem;
+		border-bottom: 2px solid var(--ink);
+		padding-bottom: 0.4rem;
+		text-align: center;
+	}
+
+	.fold__list {
+		list-style: none;
+		margin: 0 0 0.75rem;
+		padding: 0;
+	}
+
+	.fold__list a {
+		display: flex;
+		align-items: baseline;
+		gap: 0.4rem;
+		text-decoration: none;
+		color: var(--ink);
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		padding: 0.35rem 0;
+	}
+
+	.fold__list a:hover { color: var(--accent); }
+	.fold__list a:hover .fold__name { text-decoration: underline; text-underline-offset: 3px; }
+
+	.fold__name { font-weight: 600; }
+
+	.fold__dots {
+		flex: 1;
+		border-bottom: 1.5px dotted var(--rule);
+		transform: translateY(-3px);
+	}
+
+	.fold__page {
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
 		color: var(--muted);
-		line-height: 1.35;
+	}
+
+
+	.section-banner {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.6rem 0.5rem;
+		border-top: 3px double var(--ink);
+		border-bottom: 3px double var(--ink);
+		margin: 0.25rem 0;
+	}
+
+	.section-banner__label {
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--ink);
+		justify-self: start;
+	}
+
+	.section-banner__ornament {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		letter-spacing: 0.4em;
+		color: var(--ink);
+		justify-self: center;
+	}
+
+	.section-banner__page {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-style: italic;
+		font-weight: 700;
+		color: var(--accent);
+		justify-self: end;
+	}
+
+
+	.quote {
+		position: relative;
+		border: none;
+		border-top: 1px solid var(--ink);
+		border-bottom: 1px solid var(--ink);
+		background: transparent;
+		padding: 1.6rem 0.5rem 1rem 3.2rem;
+		margin-top: 1.5rem;
+		box-shadow: none;
+	}
+
+	.quote::before {
+		content: '\201C';
+		position: absolute;
+		top: 0.4rem;
+		left: 0.2rem;
+		font-family: var(--font-display);
+		font-size: 5.5rem;
+		line-height: 0.7;
+		color: var(--accent);
+		font-weight: 700;
+		pointer-events: none;
+	}
+
+	.quote__kicker {
+		font-family: var(--font-sans);
+		font-size: 0.6rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--ink);
+		margin: 0 0 0.6rem;
+		text-align: left;
+	}
+
+	.quote__body {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 1.45rem;
+		line-height: 1.4;
+		color: var(--ink);
+		margin: 0 0 0.55rem;
+		quotes: none;
+	}
+
+	.quote__attr {
+		font-family: var(--font-sans);
+		font-size: 0.72rem;
+		font-style: italic;
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--muted);
 		margin: 0;
-		padding: 0 0.15rem;
-		border-left: 3px solid var(--accent);
-		padding-left: 0.65rem;
+		text-align: right;
+	}
+
+	.headline {
+		margin-top: 0.25rem;
+		margin-bottom: 0;
 	}
 
 	.headline__text {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
 		padding-top: 0.25rem;
 		padding-bottom: 0.5rem;
 	}
@@ -227,7 +465,7 @@ const headline = {
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.28em;
-		color: var(--accent);
+		color: var(--ink);
 		margin: 0 0 0.5rem;
 	}
 
@@ -236,8 +474,31 @@ const headline = {
 		font-size: clamp(1.65rem, 3.6vw, 2.35rem);
 		font-weight: 700;
 		line-height: 1.14;
-		margin: 0 0 1rem;
+		margin: 0 0 0.5rem;
 		letter-spacing: -0.015em;
+	}
+
+	.headline__deck {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.15rem;
+		line-height: 1.4;
+		color: var(--muted);
+		max-width: 36rem;
+		margin: 0 0 0.75rem;
+	}
+
+	.headline__byline {
+		font-family: var(--font-sans);
+		font-size: 0.72rem;
+		font-style: italic;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		color: var(--muted);
+		margin: 0 0 0.85rem;
+		padding-bottom: 0.55rem;
+		border-bottom: 1px solid var(--rule);
 	}
 
 	.headline__description {
@@ -248,27 +509,9 @@ const headline = {
 		max-width: 36rem;
 	}
 
-	.headline__rule {
-		margin-top: 1.75rem;
-		margin-bottom: 1.75rem;
-	}
-
 	.masthead {
 		text-align: center;
 		margin-bottom: 1.5rem;
-	}
-
-	.masthead__edition {
-		font-family: var(--font-sans);
-		font-size: 0.7rem;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: var(--muted);
-		margin: 0 0 0.5rem;
-	}
-
-	.masthead__label {
-		margin-right: 0.5rem;
 	}
 
 	.masthead__title {
@@ -313,9 +556,42 @@ const headline = {
 
 	.columns {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-areas:
+			'pubs    pubs    tools'
+			'info    working notes'
+			'resrc   resrc   resrc';
 		gap: 1.25rem;
 		margin-bottom: 0.5rem;
+	}
+
+	.card--publications { grid-area: pubs; }
+	.card--tools        { grid-area: tools; }
+	.card--info         { grid-area: info; }
+	.card--working      { grid-area: working; }
+	.card--resources    { grid-area: resrc; }
+	.card--notes        { grid-area: notes; }
+
+	.card--publications .card__lede {
+		font-size: 0.95rem;
+		max-width: 32rem;
+	}
+
+	.card--notes .card__heading {
+		font-size: 1.3rem;
+	}
+
+	@media (max-width: 900px) {
+		.columns {
+			grid-template-columns: 1fr;
+			grid-template-areas: none;
+		}
+		.card--publications,
+		.card--tools,
+		.card--info,
+		.card--working,
+		.card--resources,
+		.card--notes { grid-area: auto; }
 	}
 
 	.card {
@@ -324,13 +600,23 @@ const headline = {
 		background: var(--paper-raised);
 		display: flex;
 		flex-direction: column;
-		min-height: 100%;
 		box-shadow: 3px 3px 0 rgba(20, 18, 15, 0.08);
 	}
 
 	.card--accent {
-		background: linear-gradient(160deg, #fff9ef 0%, var(--paper-raised) 50%);
+		background: linear-gradient(160deg, #fff5e2 0%, var(--paper-raised) 65%);
 		border-width: 3px;
+	}
+
+	.card__kicker {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.28em;
+		color: var(--ink);
+		margin: 0 0 0.4rem;
 	}
 
 	.card__heading {
@@ -347,7 +633,6 @@ const headline = {
 	.card__lede {
 		margin: 0 0 0.65rem;
 		font-size: 0.88rem;
-		flex: 1;
 	}
 
 	.card__bullets {
@@ -363,8 +648,7 @@ const headline = {
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		text-decoration: none;
-		color: var(--accent);
-		margin-top: auto;
+		color: var(--ink);
 	}
 
 	.card__link:hover {
