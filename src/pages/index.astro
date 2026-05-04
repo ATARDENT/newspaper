@@ -145,8 +145,8 @@ const headline = {
 				<PaperOfTheDay />
 				<aside class="quote" aria-label="Quote of the day">
 					<p class="quote__kicker">Quote of the day</p>
-					<blockquote class="quote__body">All models are wrong, but some are useful.</blockquote>
-					<p class="quote__attr">— George E. P. Box</p>
+					<blockquote class="quote__body" id="quote-body"></blockquote>
+					<p class="quote__attr" id="quote-attr"></p>
 				</aside>
 			</aside>
 
@@ -210,8 +210,57 @@ const headline = {
 	const datelineEl = document.getElementById('headline-dateline');
 	if (datelineEl) {
 		const month = now.toLocaleDateString('en-US', { month: 'long' });
-		datelineEl.textContent = `Menlo Park — ${month} ${now.getDate()} —`;
+		datelineEl.textContent = `Ho Chi Minh city — ${month} ${now.getDate()} —`;
 	}
+
+	const quotes = [
+		{ body: 'All models are wrong, but some are useful.', attr: 'George E. P. Box' },
+		{ body: 'The purpose of computing is insight, not numbers.', attr: 'Richard Hamming' },
+		{ body: 'In God we trust; all others must bring data.', attr: 'W. Edwards Deming' },
+		{ body: 'Without data, you\'re just another person with an opinion.', attr: 'W. Edwards Deming' },
+		{ body: 'The first principle is that you must not fool yourself — and you are the easiest person to fool.', attr: 'Richard Feynman' },
+		{ body: 'Make everything as simple as possible, but not simpler.', attr: 'Albert Einstein' },
+		{ body: 'If you can\'t explain it simply, you don\'t understand it well enough.', attr: 'Albert Einstein' },
+		{ body: 'The measure of intelligence is the ability to change.', attr: 'Albert Einstein' },
+		{ body: 'Science is a way of thinking much more than it is a body of knowledge.', attr: 'Carl Sagan' },
+		{ body: 'The greatest enemy of knowledge is not ignorance; it is the illusion of knowledge.', attr: 'Stephen Hawking' },
+		{ body: 'Intelligence is the ability to adapt to change.', attr: 'Stephen Hawking' },
+		{ body: 'Program testing can be used to show the presence of bugs, but never to show their absence.', attr: 'Edsger W. Dijkstra' },
+		{ body: 'The question of whether a computer can think is no more interesting than the question of whether a submarine can swim.', attr: 'Edsger W. Dijkstra' },
+		{ body: 'Simplicity is the ultimate sophistication.', attr: 'Leonardo da Vinci' },
+		{ body: 'Any sufficiently advanced technology is indistinguishable from magic.', attr: 'Arthur C. Clarke' },
+		{ body: 'Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.', attr: 'Antoine de Saint-Exupéry' },
+		{ body: 'Research is what I\'m doing when I don\'t know what I\'m doing.', attr: 'Wernher von Braun' },
+		{ body: 'Statistics is the grammar of science.', attr: 'Karl Pearson' },
+		{ body: 'The art of doing mathematics consists in finding that special case which contains all the germs of generality.', attr: 'David Hilbert' },
+		{ body: 'Not everything that counts can be counted, and not everything that can be counted counts.', attr: 'William Bruce Cameron' },
+		{ body: 'The best way to predict the future is to invent it.', attr: 'Alan Kay' },
+		{ body: 'It is not the strongest of the species that survives, nor the most intelligent; it is the one most adaptable to change.', attr: 'Charles Darwin' },
+		{ body: 'The true method of knowledge is experiment.', attr: 'William Blake' },
+		{ body: 'An approximate answer to the right problem is worth a good deal more than an exact answer to an approximate problem.', attr: 'John Tukey' },
+		{ body: 'I am not afraid of storms, for I am learning how to sail my ship.', attr: 'Louisa May Alcott' },
+		{ body: 'Knowledge is power.', attr: 'Francis Bacon' },
+		{ body: 'The secret of getting ahead is getting started.', attr: 'Mark Twain' },
+		{ body: 'To iterate is human, to recurse divine.', attr: 'Peter Deutsch' },
+		{ body: 'Measuring programming progress by lines of code is like measuring aircraft building progress by weight.', attr: 'Bill Gates' },
+		{ body: 'The most profound technologies are those that disappear. They weave themselves into the fabric of everyday life.', attr: 'Mark Weiser' },
+	];
+
+	function hashDay(dateStr: string): number {
+		let h = 5381;
+		for (let i = 0; i < dateStr.length; i++) h = (h << 5) + h + dateStr.charCodeAt(i);
+		return Math.abs(h);
+	}
+
+	const y = now.getFullYear();
+	const mo = String(now.getMonth() + 1).padStart(2, '0');
+	const d = String(now.getDate()).padStart(2, '0');
+	const todayQuote = quotes[hashDay(`${y}${mo}${d}`) % quotes.length]!;
+
+	const quoteBodyEl = document.getElementById('quote-body');
+	const quoteAttrEl = document.getElementById('quote-attr');
+	if (quoteBodyEl) quoteBodyEl.textContent = todayQuote.body;
+	if (quoteAttrEl) quoteAttrEl.textContent = `— ${todayQuote.attr}`;
 </script>
 
 <style>
