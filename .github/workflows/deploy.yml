@@ -69,10 +69,24 @@ jobs:
       - name: Build site
         run: npm run build
 
+      - name: Debug selected ref and Astro config
+        run: |
+          echo "Checked out ref: ${{ steps.ref.outputs.value }}"
+          echo "---- astro.config.mjs ----"
+          cat astro.config.mjs
+
       - name: Verify Pages artifact
         run: |
-          test -f dist/index.html
-          echo "dist/index.html exists"
+          if [ -f dist/index.html ]; then
+            echo "dist/index.html exists"
+            exit 0
+          fi
+
+          echo "ERROR: dist/index.html not found."
+          echo "This usually means the selected branch is not building as static output."
+          echo "Listing dist/ for debugging:"
+          ls -la dist || true
+          exit 1
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
