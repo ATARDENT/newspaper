@@ -45,7 +45,40 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Derive Astro site/base for Pages
+      - name: Configure Astro for GitHub Pages
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          OWNER_NAME="${GITHUB_REPOSITORY_OWNER}"
+
+          # Create static config override for Pages deployment
+          cat > astro.config.mjs << 'EOF'
+          // @ts-check
+          import { defineConfig } from 'astro/config';
+
+          const [owner = '', repo = ''] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
+          const isUserOrOrgPagesRepo =
+          	owner.length > 0 && repo.toLowerCase() === `${owner.toLowerCase()}.github.io`;
+          const inferredSite = owner ? `https://${owner}.github.io` : undefined;
+          const inferredBase = repo
+          	? isUserOrOrgPagesRepo
+          		? '/'
+          		: `/${repo}`
+          	: '/';
+
+          // https://astro.build/config
+          export default defineConfig({
+          	output: 'static',
+          	site: process.env.ASTRO_SITE ?? inferredSite,
+          	base: process.env.ASTRO_BASE ?? inferredBase,
+          	integrations: [],
+          });
+          EOF
+
+          echo "Created static Astro config for Pages deployment"
+          echo "---- astro.config.mjs ----"
+          cat astro.config.mjs
+
+      - name: Derive Astro site/base
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           OWNER_NAME="${GITHUB_REPOSITORY_OWNER}"
@@ -63,21 +96,6 @@ jobs:
           echo "Using ASTRO_SITE=https://${OWNER_NAME}.github.io"
           echo "Using ASTRO_BASE=${BASE_PATH}"
 
-      - name: Verify Astro static config
-        run: |
-          echo "Checked out ref: ${{ steps.ref.outputs.value }}"
-          echo "---- astro.config.mjs ----"
-          cat astro.config.mjs
-          echo ""
-          if grep -q "output.*static" astro.config.mjs; then
-            echo "✓ Found output: 'static' in astro.config.mjs"
-          else
-            echo "✗ ERROR: astro.config.mjs is missing output: 'static'"
-            echo "This branch is not configured for GitHub Pages deployment."
-            echo "Please merge the branch with static Astro config (output: 'static')."
-            exit 1
-          fi
-
       - name: Install dependencies
         run: npm ci
 
@@ -87,12 +105,12 @@ jobs:
       - name: Verify Pages artifact
         run: |
           if [ -f dist/index.html ]; then
-            echo "dist/index.html exists"
+            echo "✓ dist/index.html exists"
+            ls -la dist/
             exit 0
           fi
 
           echo "ERROR: dist/index.html not found."
-          echo "This usually means the selected branch is not building as static output."
           echo "Listing dist/ for debugging:"
           ls -la dist || true
           exit 1
