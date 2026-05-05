@@ -78,6 +78,27 @@ jobs:
           echo "---- astro.config.mjs ----"
           cat astro.config.mjs
 
+      - name: Patch server-rendered pages for static build
+        run: |
+          echo "Checking for server-rendered pages (prerender = false)..."
+
+          # Find and patch files with prerender = false
+          find src -type f \( -name "*.ts" -o -name "*.js" -o -name "*.astro" \) -exec grep -l "prerender.*=.*false" {} \; 2>/dev/null | while read -r file; do
+            echo "Patching: $file"
+            sed -i 's/export\s*const\s*prerender\s*=\s*false/export const prerender = true/g' "$file"
+            # Also handle variations
+            sed -i 's/prerender:\s*false/prerender: true/g' "$file"
+          done
+
+          echo "Patched all server-rendered pages to static"
+
+          # Verify no prerender = false remains
+          if grep -r "prerender.*=.*false" src/ 2>/dev/null; then
+            echo "WARNING: Some files still have prerender = false"
+          else
+            echo "✓ All pages ready for static build"
+          fi
+
       - name: Derive Astro site/base
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
